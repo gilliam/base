@@ -1,0 +1,14 @@
+#!/bin/bash
+
+export HOME=/app
+
+if test -d "$HOME"; then
+  for file in $HOME/.profile.d/*; do
+    source $file
+  done
+
+  hash -r
+  cd $HOME
+fi
+
+exec $*
