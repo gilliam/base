@@ -20,6 +20,7 @@ buildpacks=($buildpack_root/*)
 selected_buildpack=
 
 mkdir -p $cache_root
+mkdir -p $build_root/.apparatuses
 mkdir -p $build_root/.profile.d
 
 # This is to get a custom buildpack. Probably should use profile.d though
@@ -50,6 +51,23 @@ $selected_buildpack/bin/release "$app_root" "$cache_root" > /build/app/.release
 
 mkdir -p $build_root/.profile.d
 ruby -e "require 'yaml';(YAML.load_file('$build_root/.release')['config_vars'] || {}).each{|k,v| puts \"#{k}=#{v}\"}" > $build_root/.profile.d/config_vars
+
+if ! test -z "$APPARATUSES"; then
+  echo "-----> Installing apparatuses ..."
+  for APPARATUS in $APPARATUSES; do
+    case $APPARATUS in
+     *.tgz | *.tar.gz)
+       filename=$(basename $APPARATUS)
+       name=$(echo $filename|sed s/.tgz//g|sed s/.tar.gz//g)
+       curl -s -L -O $APPARATUS
+       echo "       Install ($name)"
+       mkdir -p "$build_root/.apparatuses/$name"
+       tar -C "$build_root/.apparatuses/$name" -zxf $filename
+       rm $filename
+       ;;
+    esac
+  done
+fi
 
 rm -fR /app
 mv /build/app /
